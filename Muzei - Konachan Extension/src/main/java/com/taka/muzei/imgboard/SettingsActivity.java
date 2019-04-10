@@ -1,38 +1,27 @@
-package com.chokoreto.muzei.konachan;
+package com.taka.muzei.imgboard;
 
-import android.annotation.TargetApi;
-import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.database.sqlite.SQLiteDatabase;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceCategory;
-import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
-import android.text.TextUtils;
-import android.util.Log;
-import android.support.v4.content.LocalBroadcastManager;
-
-import java.util.List;
-import com.google.android.apps.muzei.api.RemoteMuzeiArtSource;
 
 public class SettingsActivity extends PreferenceActivity {
+    private static final Logger logger = new Logger(SettingsActivity.class);
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
 
         addPreferencesFromResource(R.xml.pref_general);
         bindPreferenceSummaryToValue(findPreference("tags"));
+        bindPreferenceSummaryToValue(findPreference("proxy"));
         bindPreferenceSummaryToValue(findPreference("pref_sort_order"));
         bindPreferenceSummaryToValue(findPreference("pref_refresh_time"));
         bindPreferenceSummaryToValue(findPreference("pref_booru"));
         bindPreferenceSummaryToValue(findPreference("pref_clear_md5"));
+        bindPreferenceSummaryToValue(findPreference("log_file"));
     }
     @Override
     public void onPause(){
@@ -45,34 +34,30 @@ public class SettingsActivity extends PreferenceActivity {
             dbHelper.close();
             prefs.edit().putBoolean("pref_destroy_database",false).apply();
         }
+        GlobalApplication.setUpLogging();
         super.onPause();
     }
 
-    private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {
-        @Override
-        public boolean onPreferenceChange(Preference preference, Object value) {
-            String stringValue = value.toString();
-            Log.w("Konachan", preference.getKey());
-            if (preference.getKey().equals("pref_refresh_time")){
+    private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = (preference, value) -> {
+        String stringValue = value.toString();
 
-            }
-            if (preference instanceof ListPreference) {
-                ListPreference listPreference = (ListPreference) preference;
-                int index = listPreference.findIndexOfValue(stringValue);
+        logger.w(preference.getKey());
+        if (preference instanceof ListPreference) {
+            ListPreference listPreference = (ListPreference) preference;
+            int index = listPreference.findIndexOfValue(stringValue);
 
-                // Set the summary to reflect the new value.
-                preference.setSummary(
-                        index >= 0
-                                ? listPreference.getEntries()[index]
-                                : null);
+            // Set the summary to reflect the new value.
+            preference.setSummary(
+                    index >= 0
+                            ? listPreference.getEntries()[index]
+                            : null);
 
-            } else {
-                // For all other preferences, set the summary to the value's
-                // simple string representation.
-                preference.setSummary(stringValue);
-            }
-            return true;
+        } else {
+            // For all other preferences, set the summary to the value's
+            // simple string representation.
+            preference.setSummary(stringValue);
         }
+        return true;
     };
 
     private static void bindPreferenceSummaryToValue(Preference preference) {

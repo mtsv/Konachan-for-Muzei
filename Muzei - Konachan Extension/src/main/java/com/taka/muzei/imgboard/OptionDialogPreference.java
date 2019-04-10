@@ -1,4 +1,4 @@
-package com.chokoreto.muzei.konachan;
+package com.taka.muzei.imgboard;
 
 import android.content.Context;
 import android.preference.DialogPreference;

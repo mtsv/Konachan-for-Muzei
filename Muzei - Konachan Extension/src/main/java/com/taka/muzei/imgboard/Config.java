@@ -1,0 +1,62 @@
+package com.taka.muzei.imgboard;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Environment;
+import android.preference.PreferenceManager;
+
+public class Config {
+    private final SharedPreferences prefs;
+    private String imagesDir = "Muzei - Konachan";
+
+    public Config (Context context) {
+        prefs  = PreferenceManager.getDefaultSharedPreferences(context);
+    }
+
+    public int getTimeSet(){
+        return Integer.parseInt(prefs.getString("pref_refresh_time", "90"));
+    }
+
+    public long getMD5Clear(){return Long.parseLong(prefs.getString("pref_clear_md5","60"));}
+
+    public long getMD5ClearMillis(){return getMD5Clear() * 60 * 1000;}
+
+    public String getBooru(){return prefs.getString("pref_booru","konachan.com");}
+
+    public Boolean prettyflyforaWifi() { return prefs.getBoolean("pref_wifi", false); }
+
+    public String getTags() {return prefs.getString("tags", "");}
+
+    public String getSortType() { return prefs.getString("pref_sort_order","score"); }
+
+    public Boolean getRestrictContentFlag() { return prefs.getBoolean("pref_restrict_content", true); }
+
+    public int getRotateTimeMillis() {
+        int configTime = getTimeSet();
+        return configTime * 60 * 1000;
+    }
+
+    public Uri proxyUrl() {
+        String configProxyString = prefs.getString("proxy", "").trim();
+        if(configProxyString.isEmpty()) {
+            return null;
+        }
+        return Uri.parse(configProxyString);
+    }
+
+    public int getPostLimit() { return 100; }
+
+    public String getImageStoreDirectory() {
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + imagesDir;
+    }
+
+    public String getLogFile() {
+        final String fileName = prefs.getString("log_file", "").trim();
+        if(fileName.isEmpty())
+            return null;
+
+        //return GlobalApplication.getAppContext().getFilesDir().getAbsolutePath() + "/" +  Utils.cleanFileName(fileName);
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + imagesDir + "/" + Utils.cleanFileName(fileName);
+    }
+}
