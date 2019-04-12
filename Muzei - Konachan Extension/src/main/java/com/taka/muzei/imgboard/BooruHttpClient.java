@@ -114,7 +114,7 @@ public class BooruHttpClient {
     }
 
     @NonNull
-    public List<Post> getPopularPosts(BaseBooru booru, String tags, String sortType, int page, int limit, Boolean restrictContent) throws IOException {
+    public List<Post> getPopularPosts(BaseBooru booru, String tags, String sortType, int page, int limit, Boolean restrictContent, int numRetry) throws IOException {
         Map<String, String> parameters = new HashMap<>();
 
         booru.addTagsParameter(parameters, tags, sortType, restrictContent);
@@ -137,30 +137,35 @@ public class BooruHttpClient {
             builder.appendQueryParameter(p, parameters.get(p));
         }
 
-        final String booruUrl = builder.build().toString();
+        final Uri booruUrl = builder.build();
 
         logger.i("Getting popular posts. Booru endpoint: " + booruUrl);
 
-        String url;
-        if(null == proxy) {
-            url = booruUrl;
-        } else {
-            url = proxy
-                    .buildUpon()
-                    .appendQueryParameter(proxyUrlParameter, booruUrl)
-                    .build()
-                    .toString();
-            logger.i("Proxied endpoint: " + url);
-        }
+        Uri url = proxify(booruUrl);
 
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-
-        Response response = client.newCall(request).execute();
+        Response response = doRequest(client, url.toString(), numRetry);
         final String body = response.body().string();
 
         return parsePopularPosts(body, booru);
+    }
+
+    private static Response doRequest(OkHttpClient client, String url, int numRetry) throws IOException {
+        int retryIdx = 0;
+        while(true) {
+            try {
+                Request request = new Request.Builder()
+                        .url(url)
+                        .build();
+                return client.newCall(request).execute();
+            } catch (IOException e) {
+                ++retryIdx;
+                if (retryIdx == numRetry) {
+                    logger.e("All retries failed. Rethrowing");
+                    throw e;
+                }
+                logger.e("Popular posts request failed:" + e.getMessage()+ "; Doing retry #" + retryIdx);
+            }
+        }
     }
 
     @NonNull
@@ -198,12 +203,8 @@ public class BooruHttpClient {
     }
 
     public static void download(Uri uri, File file, fileDownloadProgress callback) throws IOException {
-        Request request = new Request.Builder()
-                .url(uri.toString())
-                .build();
-
         OkHttpClient client = new OkHttpClient();
-        Response response = client.newCall(request).execute();
+        Response response = doRequest(client, uri.toString(), 3);
 
         try(ResponseBody body = response.body()) {
             final long conLength = body.contentLength();
@@ -212,8 +213,8 @@ public class BooruHttpClient {
             byte[] data = new byte[1024];
 
             try (FileOutputStream fOut = new FileOutputStream(file)) {
-                float percentComplete = 0;
-                int count = 0;
+                float percentComplete;
+                int count;
                 int received = 0;
                 while ((count = bis.read(data)) != -1) {
                     received += count;

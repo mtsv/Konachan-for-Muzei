@@ -207,7 +207,8 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
             logger.i("Requesting popular posts, page #" + (pageCounter + 1));
             List<Post> response;
             try {
-                response = booruHttpClient.getPopularPosts(booru, config.getTags(), config.getSortType(), pageCounter, config.getPostLimit(), config.getRestrictContentFlag());
+                response = booruHttpClient.getPopularPosts(booru, config.getTags(), config.getSortType(),
+                        pageCounter, config.getPostLimit(), config.getRestrictContentFlag(), 3);
             } catch (Throwable th) {
                 logger.e("Failed to get popular posts", th);
                 throw new IOException("Popular posts retrieval failed: " + th.getMessage(), th);
