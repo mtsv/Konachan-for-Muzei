@@ -67,4 +67,8 @@ public class Database {
         logger.d("Query: " + query);
         dbWrite.execSQL(query, new String[]{hash, Long.toString(System.currentTimeMillis())});
     }
+
+    public static void truncateStoredImages(SQLiteDatabase dbWrite) {
+        dbWrite.execSQL("DELETE FROM images");
+    }
 }

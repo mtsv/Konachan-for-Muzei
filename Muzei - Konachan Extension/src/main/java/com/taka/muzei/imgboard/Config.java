@@ -6,11 +6,17 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class Config {
     private final SharedPreferences prefs;
     private String imagesDir = "Muzei - Konachan";
+    private Context context;
 
     public Config (Context context) {
+        this.context = context;
         prefs  = PreferenceManager.getDefaultSharedPreferences(context);
     }
 
@@ -58,5 +64,15 @@ public class Config {
 
         //return GlobalApplication.getAppContext().getFilesDir().getAbsolutePath() + "/" +  Utils.cleanFileName(fileName);
         return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + imagesDir + "/" + Utils.cleanFileName(fileName);
+    }
+
+    public void setLastLoadStatus(boolean ok) {
+        String s = "Status: " + (ok ? "OK": "Fail") +
+                "; Source: " + getBooru() +
+                "; Date: " + new SimpleDateFormat("yyyy.MM.dd HH:mm:ss", Locale.US).format(new Date()) +
+                "; Tags: " + getTags();
+
+        SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        prefs.edit().putString("last_load_status", s).apply();
     }
 }

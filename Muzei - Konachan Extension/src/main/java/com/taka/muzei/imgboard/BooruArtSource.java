@@ -267,9 +267,8 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
     protected void onTryUpdate(int reason) throws RetryException {
         logger.i("onTryUpdate() called, reason: " + reason);
         final boolean showInfo = reason == UPDATE_REASON_USER_NEXT;
+        final Config config = new Config(this);
         try {
-            final Config config = new Config(this);
-
             checkConnection(config);
 
             final BaseBooru booru = BaseBooru.construct(config);
@@ -303,11 +302,16 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
             }
 
             scheduleUpdate(System.currentTimeMillis() + config.getRotateTimeMillis());
+
+            config.setLastLoadStatus(true);
         } catch (Throwable th) {
             logger.e("onTryUpdate() failed", th);
             if (showInfo)
                 showToast("Failed to get new wallpaper: " + th.getMessage());
             logger.i("Throwing RetryException to schedule retry");
+
+            config.setLastLoadStatus(false);
+
             throw new RetryException(th);
         }
     }

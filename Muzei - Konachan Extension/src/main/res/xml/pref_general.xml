@@ -92,6 +92,14 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Develop">
+
+        <Preference
+            android:key="last_load_status"
+            android:selectable="false"
+            android:persistent="false"
+            android:title="Last image change result"
+            android:summary="none"/>
+
     <EditTextPreference
         android:key="log_file"
         android:title="@string/pref_log_file"

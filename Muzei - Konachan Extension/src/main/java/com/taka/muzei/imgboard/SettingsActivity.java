@@ -22,16 +22,26 @@ public class SettingsActivity extends PreferenceActivity {
         bindPreferenceSummaryToValue(findPreference("pref_booru"));
         bindPreferenceSummaryToValue(findPreference("pref_clear_md5"));
         bindPreferenceSummaryToValue(findPreference("log_file"));
+
+        updateLastLoadStatus();
     }
+
+    private void updateLastLoadStatus() {
+        final String lastLoadStatus = android.preference.PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("last_load_status", "");
+        if(!lastLoadStatus.isEmpty()) {
+            Preference statusPref = findPreference("last_load_status");
+            statusPref.setSummary(lastLoadStatus);
+        }
+    }
+
     @Override
     public void onPause(){
         SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         if(prefs.getBoolean("pref_destroy_database", false)){
-            Database.DatabaseHelper dbHelper = new Database.DatabaseHelper(this);
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            db.execSQL("DELETE FROM images");
-            db.close();
-            dbHelper.close();
+            try(Database.DatabaseHelper dbHelper = new Database.DatabaseHelper(this);
+                SQLiteDatabase db = dbHelper.getWritableDatabase()){
+                Database.truncateStoredImages(db);
+            }
             prefs.edit().putBoolean("pref_destroy_database",false).apply();
         }
         GlobalApplication.setUpLogging();
