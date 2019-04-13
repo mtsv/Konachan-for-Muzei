@@ -6,6 +6,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.taka.muzei.imgboard.Utils;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public class Post {
     private int id;
     private String hash;
@@ -16,6 +20,8 @@ public class Post {
     @JsonSerialize(using = ToStringSerializer.class)
     private Uri postUrl;
     private String fileSize;
+
+    public static final Set<String> allowedExtensions = new HashSet<>(Arrays.asList("png", "jpeg", "jpg"));
 
     public Post(int id, String hash, String author, String tags, Uri directImageUrl, Uri postUrl, String fileSize) {
         this.id = id;
@@ -37,6 +43,8 @@ public class Post {
 
     public Uri getDirectImageUrl() { return  directImageUrl; }
 
+    public String getImageExtension() { return null == directImageUrl ? null : Utils.extractFileExtension(directImageUrl.toString()); }
+
     public Uri getPostUrl() { return null == postUrl ? getDirectImageUrl() : postUrl; }
 
     public boolean isValid() {
@@ -47,8 +55,9 @@ public class Post {
         Uri imageUrl = getDirectImageUrl();
         if(null == imageUrl)
             return false;
-        String file_url_lower = imageUrl.toString().toLowerCase();
-        return file_url_lower.endsWith(".png") || file_url_lower.endsWith(".jpeg") || file_url_lower.endsWith(".jpg");
+
+        final String extension = Utils.extractFileExtension(imageUrl.toString());
+        return allowedExtensions.contains(extension);
     }
 
     public int getFileSize() {

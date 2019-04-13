@@ -99,13 +99,11 @@ public class BooruHttpClient {
     }
 
     public Uri proxify(Uri uri) {
-        logger.i("Proxifying URL " + uri.toString());
         if (proxy == null) {
-            logger.i("Proxy is empty, URL remains the same");
             return uri;
         }
 
-        logger.i("Proxy URL: " + proxy);
+        logger.i("Proxifying URL " + uri.toString() + " Proxy URL: " + proxy);
         Uri result =  proxy.buildUpon()
                 .appendQueryParameter(proxyUrlParameter, uri.toString())
                 .build();
@@ -114,7 +112,7 @@ public class BooruHttpClient {
     }
 
     @NonNull
-    public List<Post> getPopularPosts(BaseBooru booru, String tags, String sortType, int page, int limit, Boolean restrictContent, int numRetry) throws IOException {
+    public List<Post> getPosts(BaseBooru booru, String tags, String sortType, int page, int limit, Boolean restrictContent, int numRetry) throws IOException {
         Map<String, String> parameters = new HashMap<>();
 
         booru.addTagsParameter(parameters, tags, sortType, restrictContent);
@@ -130,7 +128,7 @@ public class BooruHttpClient {
         builder.authority(baseUrl.getAuthority());
         builder.path(booru.getApiEndpoint());
 
-        logger.i("Getting popular posts. API endpoint: " + booru.getApiEndpoint());
+        logger.i("Getting posts. API endpoint: " + booru.getApiEndpoint());
         logger.i("Parameters:");
         for(String p : new TreeSet<>(parameters.keySet())) {
             logger.i(p + "=" + parameters.get(p));
@@ -139,7 +137,7 @@ public class BooruHttpClient {
 
         final Uri booruUrl = builder.build();
 
-        logger.i("Getting popular posts. Booru endpoint: " + booruUrl);
+        logger.i("Getting posts. Booru endpoint: " + booruUrl);
 
         Uri url = proxify(booruUrl);
 
@@ -202,9 +200,9 @@ public class BooruHttpClient {
         void notifyProgress(float percentComplete);
     }
 
-    public static void download(Uri uri, File file, fileDownloadProgress callback) throws IOException {
+    public static void download(Uri uri, File file, fileDownloadProgress callback, int numRetry) throws IOException {
         OkHttpClient client = new OkHttpClient();
-        Response response = doRequest(client, uri.toString(), 3);
+        Response response = doRequest(client, uri.toString(), numRetry);
 
         try(ResponseBody body = response.body()) {
             final long conLength = body.contentLength();

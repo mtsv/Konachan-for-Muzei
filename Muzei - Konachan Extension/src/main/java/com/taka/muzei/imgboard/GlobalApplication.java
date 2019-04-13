@@ -18,7 +18,10 @@ public class GlobalApplication extends Application {
     }
 
     public static void setUpLogging() {
-        final Config config = new Config(GlobalApplication.getAppContext());
+        Context context = getAppContext();
+        if(null == context)
+            return;
+        final Config config = new Config(context);
         final String logFilePath = config.getLogFile();
         Logger.setLogFile(logFilePath);
     }

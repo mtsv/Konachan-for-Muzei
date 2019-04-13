@@ -24,10 +24,16 @@ import com.taka.muzei.imgboard.posts.Post;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Random;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 
 public class BooruArtSource extends RemoteMuzeiArtSource {
@@ -75,27 +81,10 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
         notificationManager.notify(mID, builder.build());
     }
 
-    private File checkDownloadDir(String fPath) throws IOException {
-        logger.i( "Save to dir: " + fPath);
-        File fDir = new File(fPath);
-        if (!fDir.exists()){
-            logger.i("Creating dir");
-            if(!fDir.mkdir()) {
-                logger.e("Can not create dir " + fPath);
-                throw new IOException("Failed to create local dir");
-            }
-        }
-        if(!fDir.canWrite()) {
-            logger.e("Can not write to dir " + fPath);
-            throw new IOException("Can not write to local dir " + fPath + ". Check permissions");
-        }
-
-        return fDir;
-    }
-
     private File download(final Artwork dlArt, File fDir,
                           final NotificationCompat.Builder mBuilder,
-                          final NotificationManager mNotificationManager) throws IOException {
+                          final NotificationManager mNotificationManager,
+                          int retryCount) throws IOException {
         final String resultFilename =
                 Utils.cleanFileName(dlArt.getTitle().substring(0, Math.min(200, dlArt.getTitle().length()))) + '.' +
                         Utils.extractFileExtension(dlArt.getImageUri().toString());
@@ -106,7 +95,7 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
             mBuilder.setProgress(100, Math.round(percentComplete), false);
             mBuilder.setContentText(Integer.toString((int) Math.round(percentComplete)) + "% complete");
             mNotificationManager.notify(mID, mBuilder.build());
-        });
+        }, retryCount);
 
         return file;
     }
@@ -120,9 +109,9 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
                     try {
                         final Config config = new Config(this);
 
-                        File fDir = checkDownloadDir(config.getImageStoreDirectory());
+                        File fDir = Utils.createDirOrCheckAccess(config.getImageStoreDirectory());
 
-                        File file = download(dlArt, fDir, mBuilder, mNotificationManager);
+                        File file = download(dlArt, fDir, mBuilder, mNotificationManager, config.getHttpRetryCount());
 
                         Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                         intent.setData(Uri.fromFile(file));
@@ -156,11 +145,13 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
     }
 
     private void showToast(final String text) {
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(() -> {
-            Toast toast = Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG);
-            toast.show();
-        });
+        if(new Config(this).showUserInfo()) {
+            Handler handler = new Handler(Looper.getMainLooper());
+            handler.post(() -> {
+                Toast toast = Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG);
+                toast.show();
+            });
+        }
     }
 
     private void checkConnection(Config config) {
@@ -175,19 +166,19 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
         }
     }
 
-    private boolean isPostValid(Post post) {
+    private boolean isPostValid(Post post, int postIdx) {
         if(!post.isValid()) {
-            logger.e("invalid post: " + post);
+            logger.w("Post #" + postIdx +" is not valid: " + post);
             return false;
         }
 
         if(!post.isExtensionValid()) {
-            logger.w( "wrong image extension: " + post);
+            logger.w( "Post #" + postIdx +": wrong image extension: " + Utils.extractFileExtension(post.getDirectImageUrl().toString()));
             return false;
         }
 
         if(post.getFileSize() > MAX_FILE_SIZE) {
-            logger.w( "image size " + post.getFileSize() + " exceeds limit of  " + MAX_FILE_SIZE + "b");
+            logger.w( "Post #" + postIdx +": image size " + post.getFileSize() + " exceeds limit of  " + MAX_FILE_SIZE + "b");
             return false;
         }
 
@@ -204,14 +195,14 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
         final Set<String> hashes = new HashSet<>();
 
         while (null == post) {
-            logger.i("Requesting popular posts, page #" + (pageCounter + 1));
+            logger.i("Requesting posts, page #" + (pageCounter + 1));
             List<Post> response;
             try {
-                response = booruHttpClient.getPopularPosts(booru, config.getTags(), config.getSortType(),
+                response = booruHttpClient.getPosts(booru, config.getTags(), config.getSortType(),
                         pageCounter, config.getPostLimit(), config.getRestrictContentFlag(), 3);
             } catch (Throwable th) {
-                logger.e("Failed to get popular posts", th);
-                throw new IOException("Popular posts retrieval failed: " + th.getMessage(), th);
+                logger.e("Failed to get posts", th);
+                throw new IOException("Posts retrieval failed: " + th.getMessage(), th);
             }
 
             logger.i("Response size: " + response.size());
@@ -223,9 +214,9 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
             for(int i = 0; i < response.size() && post == null; ++i) {
                 ++imageCounter;
                 Post post_i = response.get(i);
-                logger.i("response #" + Integer.toString(i) + "; post id: " + post_i.getId());
+                logger.d("Post #" + Integer.toString(i+1) + "/" + imageCounter + "; post id: " + post_i.getId());
 
-                if(!isPostValid(post_i)) {
+                if(!isPostValid(post_i, i+1)) {
                     continue;
                 }
 
@@ -237,10 +228,13 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
                 final String hash = post_i.getHash();
                 hashes.add(hash);
                 if(!Database.hasHash(db, hash)) {
-                    logger.d("This image is not stored in DB");
+                    logger.i("Post #" + Integer.toString(i+1) + "/" + imageCounter + " not stored in DB");
                     post = post_i;
                 }
             }
+
+            if(null == post)
+                logger.i("All posts on page #" + (pageCounter + 1) + " are used, trying next page");
 
             ++pageCounter;
         }
@@ -286,20 +280,7 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
 
                 final Post post = selectNewPost(booruHttpClient, booru, config, db, showInfo);
 
-                final String resultImageUrl = booruHttpClient.proxify(post.getDirectImageUrl()).toString();
-                final String postUrl = booruHttpClient.proxify(post.getPostUrl()).toString();
-
-                logger.i("Selected post: " + post.toString());
-                logger.i("Image URL: " + resultImageUrl);
-                logger.i("Post URL: " + postUrl);
-
-                publishArtwork(new Artwork.Builder()
-                        .title(post.getTags())
-                        .byline(post.getAuthor())
-                        .imageUri(Uri.parse(resultImageUrl))
-                        .token(Integer.toString(post.getId()))
-                        .viewIntent(new Intent(Intent.ACTION_VIEW, Uri.parse(postUrl)))
-                        .build());
+                applyPost(config, post, booruHttpClient);
             }
 
             scheduleUpdate(System.currentTimeMillis() + config.getRotateTimeMillis());
@@ -315,6 +296,94 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
 
             throw new RetryException(th);
         }
+    }
+
+    private boolean tryApplyLocal(Config config, Post post, Uri resultImageUrl, Uri postUrl) {
+        final String wallpapersDir = config.getWallpapersDirectory();
+        try {
+            Utils.createDirOrCheckAccess(wallpapersDir);
+        } catch (IOException e) {
+            logger.e("Local directory " + wallpapersDir + " access error", e);
+            return false;
+        }
+
+        logger.i("Cleaning up old files in dir " + wallpapersDir);
+        try {
+            final SortedMap<Long, String> prevImages = new TreeMap<>();
+            Utils.listFiles(new File(wallpapersDir), file ->{
+                if(!file.isFile())
+                    return;
+
+                final String extension = Utils.extractFileExtension(file.getName());
+                if(!Post.allowedExtensions.contains(extension))
+                    return;
+
+                final long lastModified = file.lastModified();
+                prevImages.put(lastModified, file.getAbsolutePath());
+            });
+
+            if(!prevImages.isEmpty()) {
+                final long newestLastModified = prevImages.lastKey();
+                final String prevWallpaperFile = prevImages.get(newestLastModified);
+                logger.i("Previous wallpaper file is " + prevWallpaperFile);
+                for(String file : prevImages.values()) {
+                    if(!file.equals(prevWallpaperFile)) {
+                        logger.i("Deleting old file " + file);
+                        new File(file).delete();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            logger.e("Cleaning up old files fail", e);
+        }
+
+        final String newWallpaperFilePath = wallpapersDir + "/" +
+                "wallpaper_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + "_" + new Random().nextInt(1000) + "." + post.getImageExtension();
+
+        try {
+            logger.i("Loading image from URL " + resultImageUrl + " to file " + newWallpaperFilePath);
+            BooruHttpClient.download(resultImageUrl, new File(newWallpaperFilePath), percentComplete -> {
+                logger.v("Downloaded " + percentComplete + "%");
+            }, config.getHttpRetryCount());
+            logger.i("Image loaded successfully to file " + newWallpaperFilePath);
+        } catch (IOException e) {
+            logger.e("Failed to download image from URL " + resultImageUrl + " to file " + newWallpaperFilePath, e);
+            return false;
+        }
+
+        publish(post, Uri.fromFile(new File(newWallpaperFilePath)), postUrl);
+
+        return true;
+    }
+
+    private void applyPost(Config config, Post post, BooruHttpClient booruHttpClient) {
+        final Uri resultImageUrl = booruHttpClient.proxify(post.getDirectImageUrl());
+        final Uri postUrl = booruHttpClient.proxify(post.getPostUrl());
+
+        logger.i("Selected post: " + post.toString());
+        logger.i("Image URL: " + resultImageUrl);
+        logger.i("Post URL: " + postUrl);
+
+        if(config.useLocalWallpaper()) {
+            logger.i("Trying to load file locally and provide Muzei file:// URL");
+            if(tryApplyLocal(config, post, resultImageUrl, postUrl)) {
+               return;
+            }
+            logger.i("Falling back to applying wallpaper by Web URL");
+        }
+
+        publish(post, resultImageUrl, postUrl);
+    }
+
+    private void publish(Post post, Uri imageUrl, Uri postUri) {
+        logger.i("Publishing post " + post + "; image URL: " + imageUrl);
+        publishArtwork(new Artwork.Builder()
+                .title(post.getTags())
+                .byline(post.getAuthor())
+                .imageUri(imageUrl)
+                .token(Integer.toString(post.getId()))
+                .viewIntent(new Intent(Intent.ACTION_VIEW, postUri))
+                .build());
     }
 
     public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {

@@ -12,11 +12,18 @@ import java.util.Locale;
 
 public class Config {
     private final SharedPreferences prefs;
-    private String imagesDir = "Muzei - Konachan";
+    private String imagesDir;
+    private String currentWallpaperDir;
     private Context context;
+
+    public Config () {
+        this(GlobalApplication.getAppContext());
+    }
 
     public Config (Context context) {
         this.context = context;
+        imagesDir = context.getString(R.string.app_name);
+        currentWallpaperDir = context.getString(R.string.app_name) + " Wallpapers";
         prefs  = PreferenceManager.getDefaultSharedPreferences(context);
     }
 
@@ -51,10 +58,14 @@ public class Config {
         return Uri.parse(configProxyString);
     }
 
-    public int getPostLimit() { return 100; }
+    public int getPostLimit() { return 200; }
 
     public String getImageStoreDirectory() {
         return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + imagesDir;
+    }
+
+    public String getWallpapersDirectory() {
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + currentWallpaperDir;
     }
 
     public String getLogFile() {
@@ -74,5 +85,17 @@ public class Config {
 
         SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(context);
         prefs.edit().putString("last_load_status", s).apply();
+    }
+
+    public boolean showUserInfo() {
+        return true;
+    }
+
+    public boolean useLocalWallpaper() {
+        return true;
+    }
+
+    public int getHttpRetryCount() {
+        return 3;
     }
 }
