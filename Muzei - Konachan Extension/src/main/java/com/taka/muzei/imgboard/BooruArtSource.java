@@ -168,17 +168,17 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
 
     private boolean isPostValid(Post post, int postIdx) {
         if(!post.isValid()) {
-            logger.w("Post #" + postIdx +" is not valid: " + post);
+            logger.d("Post #" + postIdx +" is not valid: " + post);
             return false;
         }
 
         if(!post.isExtensionValid()) {
-            logger.w( "Post #" + postIdx +": wrong image extension: " + Utils.extractFileExtension(post.getDirectImageUrl().toString()));
+            logger.d( "Post #" + postIdx +": wrong image extension: " + Utils.extractFileExtension(post.getDirectImageUrl().toString()));
             return false;
         }
 
         if(post.getFileSize() > MAX_FILE_SIZE) {
-            logger.w( "Post #" + postIdx +": image size " + post.getFileSize() + " exceeds limit of  " + MAX_FILE_SIZE + "b");
+            logger.d( "Post #" + postIdx +": image size " + post.getFileSize() + " exceeds limit of  " + MAX_FILE_SIZE + "b");
             return false;
         }
 
@@ -298,7 +298,7 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
         }
     }
 
-    private boolean tryApplyLocal(Config config, Post post, Uri resultImageUrl, Uri postUrl) {
+    private boolean tryApplyLocal(Config config, Post post, BooruHttpClient booruHttpClient) {
         final String wallpapersDir = config.getWallpapersDirectory();
         try {
             Utils.createDirOrCheckAccess(wallpapersDir);
@@ -341,48 +341,46 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
                 "wallpaper_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + "_" + new Random().nextInt(1000) + "." + post.getImageExtension();
 
         try {
-            logger.i("Loading image from URL " + resultImageUrl + " to file " + newWallpaperFilePath);
-            BooruHttpClient.download(resultImageUrl, new File(newWallpaperFilePath), percentComplete -> {
+            logger.i("Loading image from " + post.getDirectImageUrl() + " to file " + newWallpaperFilePath);
+            booruHttpClient.download(post, new File(newWallpaperFilePath), percentComplete -> {
                 logger.v("Downloaded " + percentComplete + "%");
             }, config.getHttpRetryCount());
             logger.i("Image loaded successfully to file " + newWallpaperFilePath);
         } catch (IOException e) {
-            logger.e("Failed to download image from URL " + resultImageUrl + " to file " + newWallpaperFilePath, e);
+            logger.e("Failed to download image to file " + newWallpaperFilePath, e);
             return false;
         }
 
-        publish(post, Uri.fromFile(new File(newWallpaperFilePath)), postUrl);
+        publish(post, Uri.fromFile(new File(newWallpaperFilePath)), booruHttpClient);
 
         return true;
     }
 
     private void applyPost(Config config, Post post, BooruHttpClient booruHttpClient) {
-        final Uri resultImageUrl = booruHttpClient.proxify(post.getDirectImageUrl());
-        final Uri postUrl = booruHttpClient.proxify(post.getPostUrl());
-
         logger.i("Selected post: " + post.toString());
-        logger.i("Image URL: " + resultImageUrl);
-        logger.i("Post URL: " + postUrl);
 
         if(config.useLocalWallpaper()) {
-            logger.i("Trying to load file locally and provide Muzei file:// URL");
-            if(tryApplyLocal(config, post, resultImageUrl, postUrl)) {
+            logger.i("Trying to load file locally and provide Muzei 'file://...' URL");
+            if(tryApplyLocal(config, post, booruHttpClient)) {
                return;
             }
             logger.i("Falling back to applying wallpaper by Web URL");
         }
 
-        publish(post, resultImageUrl, postUrl);
+        final Uri resultImageUrl = booruHttpClient.proxify(post.getDirectImageUrl());
+
+        publish(post, resultImageUrl, booruHttpClient);
     }
 
-    private void publish(Post post, Uri imageUrl, Uri postUri) {
+    private void publish(Post post, Uri imageUrl, BooruHttpClient booruHttpClient) {
+        final Uri postUrl = booruHttpClient.proxify(post.getPostUrl());
         logger.i("Publishing post " + post + "; image URL: " + imageUrl);
         publishArtwork(new Artwork.Builder()
                 .title(post.getTags())
                 .byline(post.getAuthor())
                 .imageUri(imageUrl)
                 .token(Integer.toString(post.getId()))
-                .viewIntent(new Intent(Intent.ACTION_VIEW, postUri))
+                .viewIntent(new Intent(Intent.ACTION_VIEW, postUrl))
                 .build());
     }
 

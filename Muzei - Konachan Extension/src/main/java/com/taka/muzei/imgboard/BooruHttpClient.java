@@ -144,7 +144,7 @@ public class BooruHttpClient {
         Response response = doRequest(client, url.toString(), numRetry);
         final String body = response.body().string();
 
-        return parsePopularPosts(body, booru);
+        return parsePosts(body, booru);
     }
 
     private static Response doRequest(OkHttpClient client, String url, int numRetry) throws IOException {
@@ -158,16 +158,17 @@ public class BooruHttpClient {
             } catch (IOException e) {
                 ++retryIdx;
                 if (retryIdx == numRetry) {
-                    logger.e("All retries failed. Rethrowing");
+                    if(numRetry > 0)
+                        logger.e("All retries failed. Rethrowing");
                     throw e;
                 }
-                logger.e("Popular posts request failed:" + e.getMessage()+ "; Doing retry #" + retryIdx);
+                logger.e("Posts request failed: " + e.getMessage()+ "; Doing retry #" + retryIdx);
             }
         }
     }
 
     @NonNull
-    private List<Post> parsePopularPosts(String body, BaseBooru booru) throws IOException {
+    private List<Post> parsePosts(String body, BaseBooru booru) throws IOException {
         List<Post> result = new ArrayList<>();
 
         if(body.isEmpty())
@@ -201,11 +202,21 @@ public class BooruHttpClient {
     }
 
     public static void download(Uri uri, File file, fileDownloadProgress callback, int numRetry) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        Response response = doRequest(client, uri.toString(), numRetry);
+        final OkHttpClient client = new OkHttpClient();
+        downloadImpl(client, uri, file, callback, numRetry);
+    }
 
-        try(ResponseBody body = response.body()) {
+    public void download(Post post, File file, fileDownloadProgress callback, int numRetry) throws IOException {
+        final Uri url = proxify(post.getDirectImageUrl());
+        downloadImpl(client, url, file, callback, numRetry);
+    }
+
+    private static void downloadImpl(OkHttpClient client, Uri uri, File file, fileDownloadProgress callback, int numRetry) throws IOException {
+        final Response response = doRequest(client, uri.toString(), numRetry);
+
+        try (ResponseBody body = response.body()) {
             final long conLength = body.contentLength();
+            logger.d("Content length: " + conLength);
             BufferedInputStream bis = new BufferedInputStream(body.byteStream());
 
             byte[] data = new byte[1024];

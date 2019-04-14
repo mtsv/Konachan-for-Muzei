@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -13,7 +14,7 @@ import java.util.Locale;
 public class Config {
     private final SharedPreferences prefs;
     private String imagesDir;
-    private String currentWallpaperDir;
+    private String wallpaperDir;
     private Context context;
 
     public Config () {
@@ -23,7 +24,7 @@ public class Config {
     public Config (Context context) {
         this.context = context;
         imagesDir = context.getString(R.string.app_name);
-        currentWallpaperDir = context.getString(R.string.app_name) + " Wallpapers";
+        wallpaperDir = context.getString(R.string.app_name) + " Wallpapers";
         prefs  = PreferenceManager.getDefaultSharedPreferences(context);
     }
 
@@ -65,7 +66,7 @@ public class Config {
     }
 
     public String getWallpapersDirectory() {
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + currentWallpaperDir;
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + wallpaperDir;
     }
 
     public String getLogFile() {
@@ -73,8 +74,17 @@ public class Config {
         if(fileName.isEmpty())
             return null;
 
+        final String logDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + wallpaperDir;
+
+        try {
+            Utils.createDirOrCheckAccess(logDir);
+        } catch (IOException e) {
+            Logger.e("Config","Log directory " + logDir + " access error", e);
+            return null;
+        }
+
         //return GlobalApplication.getAppContext().getFilesDir().getAbsolutePath() + "/" +  Utils.cleanFileName(fileName);
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + imagesDir + "/" + Utils.cleanFileName(fileName);
+        return logDir + "/" + Utils.cleanFileName(fileName);
     }
 
     public void setLastLoadStatus(boolean ok) {
