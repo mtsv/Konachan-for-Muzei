@@ -53,13 +53,28 @@ public class BooruHttpClient {
 
     BooruHttpClient(Uri baseUrl, Uri proxy) {
         this.baseUrl = baseUrl;
-        this.proxy = null == proxy ? proxy : removeQueryParameter(proxy, proxyUrlParameter);
+        this.proxy = null == proxy ? null : removeQueryParameter(proxy, proxyUrlParameter);
 
-        initApiClient();
+        client = constructHttpClient((request, response) -> {
+            if(null != proxy) {
+                // TODO: must be better way to check for timeouts on proxy
+                final String urlParameter = request.url().queryParameter(proxyUrlParameter);
+                final String urlParameterEncoded = encodeUrl(urlParameter);
+                final String responseRequestUrl = response.request().url().toString();
+                if(!responseRequestUrl.contains(urlParameterEncoded)) {
+                    logger.e("parameter with encoded URL " + urlParameterEncoded + " missing in reply URL " + responseRequestUrl);
+                    throw new IOException("Took too long to response? Returned URL: " + responseRequestUrl);
+                }
+            }
+        });
     }
 
-    private void initApiClient() {
-        client = new OkHttpClient.Builder()
+    private interface onHttpSuccessfulResponse {
+        void call(Request request, Response response) throws IOException;
+    }
+
+    private static OkHttpClient constructHttpClient(onHttpSuccessfulResponse callback) {
+        return new OkHttpClient.Builder()
                 .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS))
                 .addInterceptor(chain -> {
                     Request request = chain.request();
@@ -67,15 +82,7 @@ public class BooruHttpClient {
 
                     if(response.isSuccessful()) {
                         logger.i("reply success: " + response.toString());
-                        if(null != proxy) {
-                            final String urlParameter = request.url().queryParameter(proxyUrlParameter);
-                            final String urlParameterEncoded = encodeUrl(urlParameter);
-                            final String responseRequestUrl = response.request().url().toString();
-                            if(!responseRequestUrl.contains(urlParameterEncoded)) {
-                                logger.e("parameter with encoded URL " + urlParameterEncoded + " missing in reply URL " + responseRequestUrl);
-                                throw new IOException("Took too long to response? Returned URL: " + responseRequestUrl);
-                            }
-                        }
+                        callback.call(request, response);
                     } else {
                         throw new IOException("HTTP request failed. Code: " + response.code() + ". Message: " + response.message());
                     }
@@ -202,7 +209,13 @@ public class BooruHttpClient {
     }
 
     public static void download(Uri uri, File file, fileDownloadProgress callback, int numRetry) throws IOException {
-        final OkHttpClient client = new OkHttpClient();
+        final OkHttpClient client = constructHttpClient(((request, response) -> {
+            final String extension = Utils.extractFileExtension(uri.toString());
+            if(!response.request().url().toString().endsWith(extension)) {
+                logger.e("Requested URL " + uri + " but received " + response.request().url());
+                throw new IOException("Took too long to response? Returned URL: " + response.request().url());
+            }
+        }));
         downloadImpl(client, uri, file, callback, numRetry);
     }
 
