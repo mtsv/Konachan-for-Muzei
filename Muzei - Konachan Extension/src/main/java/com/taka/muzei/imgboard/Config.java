@@ -52,7 +52,7 @@ public class Config {
     }
 
     public Uri proxyUrl() {
-        String configProxyString = prefs.getString("proxy", "").trim();
+        final String configProxyString = prefs.getString("proxy", "").trim();
         if(configProxyString.isEmpty()) {
             return null;
         }
@@ -88,17 +88,17 @@ public class Config {
     }
 
     public void setLastLoadStatus(boolean ok) {
-        String s = "Status: " + (ok ? "OK": "Fail") +
-                "; Source: " + getBooru() +
-                "; Date: " + new SimpleDateFormat("yyyy.MM.dd HH:mm:ss", Locale.US).format(new Date()) +
-                "; Tags: " + getTags();
+        String s = "Status: " + (ok ? "OK": "Fail") + "\n" +
+                "Source: " + getBooru() + "\n" +
+                "Date: " + new SimpleDateFormat("yyyy.MM.dd HH:mm:ss", Locale.US).format(new Date()) + "\n" +
+                "Tags: " + getTags();
 
         SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(context);
         prefs.edit().putString("last_load_status", s).apply();
     }
 
     public boolean showUserInfo() {
-        return true;
+        return BuildConfig.DEBUG;
     }
 
     public boolean useLocalWallpaper() {
