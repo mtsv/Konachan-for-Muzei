@@ -8,7 +8,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -69,6 +73,19 @@ public class Utils {
             throw new IOException(dir + " is not a directory");
         for(File f : dir.listFiles()) {
             callback.next(f);
+        }
+    }
+
+    public static void copyFile(File src, File dst) throws IOException {
+        logger.i("Copying file " + src.getAbsolutePath() + " to " + dst.getAbsolutePath());
+        try (InputStream in = new FileInputStream(src)) {
+            try (OutputStream out = new FileOutputStream(dst)) {
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
         }
     }
 }

@@ -81,23 +81,24 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
         notificationManager.notify(mID, builder.build());
     }
 
-    private File download(final Artwork dlArt, File fDir,
-                          final NotificationCompat.Builder mBuilder,
-                          final NotificationManager mNotificationManager,
+    private File download(Uri url, File fDir, String resultFilename,
+                          NotificationCompat.Builder mBuilder,
+                          NotificationManager mNotificationManager,
                           int retryCount) throws IOException {
-        final String resultFilename =
-                Utils.cleanFileName(dlArt.getTitle().substring(0, Math.min(200, dlArt.getTitle().length()))) + '.' +
-                        Utils.extractFileExtension(dlArt.getImageUri().toString());
-        logger.i("Result file name: " + resultFilename);
         File file = new File(fDir, resultFilename);
 
-        BooruHttpClient.download(dlArt.getImageUri(), file, percentComplete -> {
+        BooruHttpClient.download(url, file, percentComplete -> {
             mBuilder.setProgress(100, Math.round(percentComplete), false);
             mBuilder.setContentText(Integer.toString((int) Math.round(percentComplete)) + "% complete");
             mNotificationManager.notify(mID, mBuilder.build());
         }, retryCount);
 
         return file;
+    }
+
+    private String constructLocalFileName(Artwork dlArt) {
+        return Utils.cleanFileName(dlArt.getTitle().substring(0, Math.min(200, dlArt.getTitle().length()))) + '.' +
+                Utils.extractFileExtension(dlArt.getImageUri().toString());
     }
 
     public void downloadArtwork(final Artwork dlArt){
@@ -111,7 +112,16 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
 
                         File fDir = Utils.createDirOrCheckAccess(config.getImageStoreDirectory());
 
-                        File file = download(dlArt, fDir, mBuilder, mNotificationManager, config.getHttpRetryCount());
+                        final String resultFilename = constructLocalFileName(dlArt);
+                        logger.i("Result file name: " + resultFilename);
+
+                        File file;
+                        if(dlArt.getImageUri().toString().startsWith("file://")) {
+                            file = new File(fDir, resultFilename);
+                            Utils.copyFile(new File(dlArt.getImageUri().getPath()), file);
+                        } else {
+                            file = download(dlArt.getImageUri(), fDir, resultFilename, mBuilder, mNotificationManager, config.getHttpRetryCount());
+                        }
 
                         Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                         intent.setData(Uri.fromFile(file));
