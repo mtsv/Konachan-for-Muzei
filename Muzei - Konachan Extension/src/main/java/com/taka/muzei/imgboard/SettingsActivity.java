@@ -7,12 +7,19 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.support.v7.app.AlertDialog;
 
-public class SettingsActivity extends PreferenceActivity {
+import java.io.IOException;
+
+public class SettingsActivity extends PreferenceActivity implements Preference.OnPreferenceChangeListener {
     private static final Logger logger = new Logger(SettingsActivity.class);
+    private Config config;
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
+        config = new Config(this);
+
+        config.fixLogFileInPreferences();
 
         addPreferencesFromResource(R.xml.pref_general);
         bindPreferenceSummaryToValue(findPreference("tags"));
@@ -48,10 +55,25 @@ public class SettingsActivity extends PreferenceActivity {
         super.onPause();
     }
 
-    private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = (preference, value) -> {
-        String stringValue = value.toString();
+    private void bindPreferenceSummaryToValue(Preference preference) {
+        // Set the listener to watch for value changes.
+        preference.setOnPreferenceChangeListener(this);
 
-        logger.w(preference.getKey());
+        // Trigger the listener immediately with the preference's
+        // current value.
+        this.onPreferenceChange(preference,
+                PreferenceManager
+                        .getDefaultSharedPreferences(preference.getContext())
+                        .getString(preference.getKey(), ""));
+    }
+
+    @Override
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+        String stringValue = newValue.toString();
+
+        final String preferenceKey = preference.getKey();
+
+        logger.i(preferenceKey);
         if (preference instanceof ListPreference) {
             ListPreference listPreference = (ListPreference) preference;
             int index = listPreference.findIndexOfValue(stringValue);
@@ -63,22 +85,29 @@ public class SettingsActivity extends PreferenceActivity {
                             : null);
 
         } else {
+            if(preferenceKey.equals("log_file")) {
+                try {
+                    final String fullPath = config.constructLogFilePath(stringValue);
+                    if(null != fullPath) {
+                        Utils.checkWriteAccessToFile(fullPath);
+                        stringValue = fullPath;
+                    }
+                } catch (IOException e) {
+                    logger.e("Log file access", e);
+                    new AlertDialog.Builder(this)
+                            .setTitle("Log file access error")
+                            .setMessage("Can not set log file to " + stringValue + "\n" + e.getMessage())
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
+                            .create()
+                            .show();
+                    return false;
+                }
+            }
             // For all other preferences, set the summary to the value's
             // simple string representation.
             preference.setSummary(stringValue);
         }
         return true;
-    };
-
-    private static void bindPreferenceSummaryToValue(Preference preference) {
-        // Set the listener to watch for value changes.
-        preference.setOnPreferenceChangeListener(sBindPreferenceSummaryToValueListener);
-
-        // Trigger the listener immediately with the preference's
-        // current value.
-        sBindPreferenceSummaryToValueListener.onPreferenceChange(preference,
-                PreferenceManager
-                        .getDefaultSharedPreferences(preference.getContext())
-                        .getString(preference.getKey(), ""));
     }
 }

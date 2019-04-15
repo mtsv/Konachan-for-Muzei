@@ -12,17 +12,16 @@ import java.util.Date;
 import java.util.Locale;
 
 public class Config {
+    private static final Logger logger = new Logger(Config.class);
     private final SharedPreferences prefs;
     private String imagesDir;
     private String wallpaperDir;
-    private Context context;
 
     public Config () {
         this(GlobalApplication.getAppContext());
     }
 
     public Config (Context context) {
-        this.context = context;
         imagesDir = context.getString(R.string.app_name);
         wallpaperDir = context.getString(R.string.app_name) + " Wallpapers";
         prefs  = PreferenceManager.getDefaultSharedPreferences(context);
@@ -69,22 +68,45 @@ public class Config {
         return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + wallpaperDir;
     }
 
+    public String getDefaultLogDirectory() {
+        return Environment.getExternalStorageDirectory().getAbsolutePath();
+    }
+
+    public String constructLogFilePath(String logFileName) {
+        if(null == logFileName)
+            return null;
+        logFileName = logFileName.trim();
+        if(logFileName.isEmpty())
+            return null;
+
+        if(logFileName.startsWith("/")) // user provided absolute path, use it
+            return logFileName;
+
+        return getDefaultLogDirectory() + "/" + logFileName;
+    }
+
     public String getLogFile() {
         final String fileName = prefs.getString("log_file", "").trim();
         if(fileName.isEmpty())
             return null;
 
-        final String logDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + wallpaperDir;
+        final String logFile = constructLogFilePath(fileName);
 
         try {
-            Utils.createDirOrCheckAccess(logDir);
+            Utils.checkWriteAccessToFile(logFile);
         } catch (IOException e) {
-            Logger.e("Config","Log directory " + logDir + " access error", e);
             return null;
         }
 
-        //return GlobalApplication.getAppContext().getFilesDir().getAbsolutePath() + "/" +  Utils.cleanFileName(fileName);
-        return logDir + "/" + Utils.cleanFileName(fileName);
+        return logFile;
+    }
+
+    public void fixLogFileInPreferences() {
+        final String fileName = getLogFile();
+
+        logger.d("Fixed log file path: " + (null == fileName ? "NULL" : fileName));
+
+        prefs.edit().putString("log_file", fileName).apply();
     }
 
     public void setLastLoadStatus(boolean ok) {
@@ -93,7 +115,6 @@ public class Config {
                 "Date: " + new SimpleDateFormat("yyyy.MM.dd HH:mm:ss", Locale.US).format(new Date()) + "\n" +
                 "Tags: " + getTags();
 
-        SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(context);
         prefs.edit().putString("last_load_status", s).apply();
     }
 

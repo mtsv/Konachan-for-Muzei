@@ -88,4 +88,18 @@ public class Utils {
             }
         }
     }
+
+    public static void checkWriteAccessToFile(String path) throws IOException {
+        final File file = new File(path);
+        final String dir = file.getParent();
+        if(null == dir)
+            throw new IOException("Can not write to root");
+        createDirOrCheckAccess(dir);
+        if(file.createNewFile())
+            return;
+        if(!file.canWrite()) {
+            logger.e("No write permission for file " + path);
+            throw new IOException("Can not write to file " + path);
+        }
+    }
 }
