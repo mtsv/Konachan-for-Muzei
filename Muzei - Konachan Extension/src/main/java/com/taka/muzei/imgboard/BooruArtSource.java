@@ -88,7 +88,7 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
                           int retryCount) throws IOException {
         File file = new File(fDir, resultFilename);
 
-        BooruHttpClient.download(url, file, percentComplete -> {
+        BooruHttpClient.downloadImage(url, file, percentComplete -> {
             mBuilder.setProgress(100, Math.round(percentComplete), false);
             mBuilder.setContentText(Integer.toString((int) Math.round(percentComplete)) + "% complete");
             mNotificationManager.notify(mID, mBuilder.build());
@@ -356,7 +356,7 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
 
         try {
             logger.i("Loading image from " + post.getDirectImageUrl() + " to file " + newWallpaperFilePath);
-            booruHttpClient.download(post, new File(newWallpaperFilePath), percentComplete -> {
+            booruHttpClient.downloadImage(post, new File(newWallpaperFilePath), percentComplete -> {
                 logger.v("Downloaded " + percentComplete + "%");
             }, config.getHttpRetryCount());
             logger.i("Image loaded successfully to file " + newWallpaperFilePath);

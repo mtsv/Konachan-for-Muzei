@@ -56,17 +56,20 @@ public class BooruHttpClient {
         this.proxy = null == proxy ? null : removeQueryParameter(proxy, proxyUrlParameter);
 
         client = constructHttpClient((request, response) -> {
-            if(null != proxy) {
-                // TODO: must be better way to check for timeouts on proxy
-                final String urlParameter = request.url().queryParameter(proxyUrlParameter);
-                final String urlParameterEncoded = encodeUrl(urlParameter);
-                final String responseRequestUrl = response.request().url().toString();
-                if(!responseRequestUrl.contains(urlParameterEncoded)) {
-                    logger.e("parameter with encoded URL " + urlParameterEncoded + " missing in reply URL " + responseRequestUrl);
-                    throw new IOException("Took too long to response? Returned URL: " + responseRequestUrl);
-                }
-            }
+            if(null != proxy)
+                checkResponseContentType(response, "application/json");
         });
+    }
+
+    private static void checkResponseContentType(Response response, String expected) throws IOException {
+        String contentType = response.header("Content-Type");
+        if(null == contentType)
+            contentType = "NULL";
+        logger.i("Response content type: " + contentType);
+        if(!contentType.startsWith(expected)) {
+            logger.e("Expected Content-Type: " + expected + ", got: " + contentType);
+            throw new IOException("Took too long to response? Returned Content-Type:" + contentType);
+        }
     }
 
     private interface onHttpSuccessfulResponse {
@@ -208,20 +211,14 @@ public class BooruHttpClient {
         void notifyProgress(float percentComplete);
     }
 
-    public static void download(Uri uri, File file, fileDownloadProgress callback, int numRetry) throws IOException {
-        final OkHttpClient client = constructHttpClient(((request, response) -> {
-            final String extension = Utils.extractFileExtension(uri.toString());
-            if(!response.request().url().toString().endsWith(extension)) {
-                logger.e("Requested URL " + uri + " but received " + response.request().url());
-                throw new IOException("Took too long to response? Returned URL: " + response.request().url());
-            }
-        }));
+    public static void downloadImage(Uri uri, File file, fileDownloadProgress callback, int numRetry) throws IOException {
+        final OkHttpClient client = constructHttpClient((request, response) -> checkResponseContentType(response, "image/"));
         downloadImpl(client, uri, file, callback, numRetry);
     }
 
-    public void download(Post post, File file, fileDownloadProgress callback, int numRetry) throws IOException {
+    public void downloadImage(Post post, File file, fileDownloadProgress callback, int numRetry) throws IOException {
         final Uri url = proxify(post.getDirectImageUrl());
-        downloadImpl(client, url, file, callback, numRetry);
+        downloadImage(url, file, callback, numRetry);
     }
 
     private static void downloadImpl(OkHttpClient client, Uri uri, File file, fileDownloadProgress callback, int numRetry) throws IOException {
