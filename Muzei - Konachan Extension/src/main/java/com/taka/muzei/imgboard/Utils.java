@@ -1,7 +1,5 @@
 package com.taka.muzei.imgboard;
 
-import android.support.annotation.NonNull;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,6 +13,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import androidx.annotation.NonNull;
 
 public class Utils {
     private static final Logger logger = new Logger(Utils.class);

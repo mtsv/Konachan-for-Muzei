@@ -1,7 +1,6 @@
 package com.taka.muzei.imgboard;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
+import androidx.annotation.NonNull;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;

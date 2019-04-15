@@ -1,7 +1,6 @@
 package com.taka.muzei.imgboard.booru;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 
 import com.taka.muzei.imgboard.Config;
 import com.taka.muzei.imgboard.Logger;
@@ -11,6 +10,8 @@ import com.taka.muzei.imgboard.posts.Post;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import androidx.annotation.NonNull;
 
 public abstract class BaseBooru {
     private static final Logger logger = new Logger(BaseBooru.class);

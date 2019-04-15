@@ -11,9 +11,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.NonNull;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.FileProvider;
 import android.widget.Toast;
 
 import com.google.android.apps.muzei.api.Artwork;
@@ -34,6 +31,10 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
+import androidx.core.content.FileProvider;
 
 
 public class BooruArtSource extends RemoteMuzeiArtSource {
@@ -261,7 +262,8 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
         }
 
         if(showInfo)
-            showToast("Image #" + validImageCounter + " selected" + (allRotated ? ". All Posts with this tag rotated" : ""));
+            showToast("Image #" + validImageCounter + "/" + imageCounter + " selected" +
+                    (allRotated ? ". All Posts with this tag rotated" : ""));
 
         Database.addHash(db, post.getHash());
 
@@ -292,6 +294,8 @@ public class BooruArtSource extends RemoteMuzeiArtSource {
 
                 applyPost(config, post, booruHttpClient);
             }
+            if(showInfo)
+                showToast("New image published");
 
             scheduleUpdate(System.currentTimeMillis() + config.getRotateTimeMillis());
 

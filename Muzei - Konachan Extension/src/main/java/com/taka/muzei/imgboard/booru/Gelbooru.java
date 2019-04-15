@@ -1,12 +1,13 @@
 package com.taka.muzei.imgboard.booru;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 
 import com.taka.muzei.imgboard.posts.BaseRawPost;
 import com.taka.muzei.imgboard.posts.Post;
 
 import java.util.Map;
+
+import androidx.annotation.NonNull;
 
 public class Gelbooru extends BaseBooru {
 
