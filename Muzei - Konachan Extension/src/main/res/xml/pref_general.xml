@@ -80,37 +80,31 @@
         />
     </PreferenceCategory>
     <PreferenceCategory android:title="Database">
-        <com.taka.muzei.imgboard.OptionDialogPreference
+        <Preference
             android:key="pref_destroy_database"
             android:title="Clear Database"
-            android:dialogTitle="Clear Database"
-            android:dialogMessage="Are you sure you want to clear the database?"
-            android:negativeButtonText="Cancel"
-            android:positiveButtonText="Yes"
-
+            android:selectable="true"
             />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Develop">
+    <PreferenceCategory android:title="Develop"
+        android:key="develop">
 
         <Preference
             android:key="last_load_status"
+            android:title="Last image change result"
             android:selectable="false"
             android:persistent="false"
-            android:title="Last image change result"
             android:summary="none"/>
 
-    <EditTextPreference
-        android:key="log_file"
-        android:title="@string/pref_log_file"
-        android:selectAllOnFocus="true"
-        android:inputType="text"
-        android:singleLine="true"
-        android:maxLines="1" />
+        <com.taka.muzei.imgboard.EditTextLongClickPreference
+            android:key="log_file"
+            android:title="@string/pref_log_file"
+            android:selectAllOnFocus="true"
+            android:inputType="text"
+            android:singleLine="true"
+            android:maxLines="1" />
 
     </PreferenceCategory>
-<!--
-
--->
 
 </PreferenceScreen>

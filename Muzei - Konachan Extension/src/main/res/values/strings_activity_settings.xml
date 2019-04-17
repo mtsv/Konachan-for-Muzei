@@ -1,5 +1,5 @@
 <resources>
-    <string name="title_activity_settings">Muzei - Konachan Settings</string>
+    <string name="title_activity_settings">Muzei - Booru Settings</string>
     <string name="pref_tags">Tags</string>
     <string name="pref_default_tags">hatsune_miku</string>
     <string name="pref_proxy">Proxy address</string>

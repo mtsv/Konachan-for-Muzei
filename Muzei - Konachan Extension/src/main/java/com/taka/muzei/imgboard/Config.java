@@ -101,12 +101,13 @@ public class Config {
         return logFile;
     }
 
-    public void fixLogFileInPreferences() {
+    public String fixLogFileInPreferences() {
         final String fileName = getLogFile();
 
         logger.d("Fixed log file path: " + (null == fileName ? "NULL" : fileName));
 
         prefs.edit().putString("log_file", fileName).apply();
+        return fileName;
     }
 
     public void setLastLoadStatus(boolean ok) {
