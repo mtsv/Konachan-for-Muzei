@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.chokoreto.muzei.konachan" >
+    package="com.taka.muzei.imgboard" >
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -8,13 +8,14 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
+        android:name=".GlobalApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme"
         >
         <service
-            android:name="com.chokoreto.muzei.konachan.KonachanArtSource"
+            android:name="com.taka.muzei.imgboard.BooruArtSource"
             android:description="@string/source_description"
             android:icon="@drawable/ic_launcher"
             android:label="@string/source_name" >
@@ -27,14 +28,24 @@
                 android:value="#000" />
             <meta-data
                 android:name="settingsActivity"
-                android:value="com.chokoreto.muzei.konachan.SettingsActivity"/>
+                android:value="com.taka.muzei.imgboard.SettingsActivity"/>
         </service>
 
         <activity
-            android:name="com.chokoreto.muzei.konachan.SettingsActivity"
+            android:name="com.taka.muzei.imgboard.SettingsActivity"
             android:label="@string/title_activity_settings"
             android:exported="true">
         </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths"/>
+        </provider>
     </application>
 
 </manifest>

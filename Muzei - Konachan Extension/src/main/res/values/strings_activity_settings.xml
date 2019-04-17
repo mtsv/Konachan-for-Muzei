@@ -1,7 +1,9 @@
 <resources>
-    <string name="title_activity_settings">Muzei - Konachan Settings</string>
+    <string name="title_activity_settings">Muzei - Booru Settings</string>
     <string name="pref_tags">Tags</string>
     <string name="pref_default_tags">hatsune_miku</string>
+    <string name="pref_proxy">Proxy address</string>
+    <string name="pref_default_proxy"></string>
     <string name="pref_title_sort_order">Sort Order</string>
     <string-array name="pref_sort_options">
         <item>Score</item>
@@ -43,12 +45,16 @@
     <string-array name="pref_booru_selections">
         <item>konachan.com</item>
         <item>gelbooru.com</item>
-  <!--      <item>danbooru.donmai.us</item> -->
+        <item>danbooru.donmai.us</item>
+        <item>safebooru.org</item>
+        <item>yande.re</item>
     </string-array>
     <string-array name="pref_booru_selections_values">
         <item>konachan.com</item>
         <item>gelbooru.com</item>
-   <!--     <item>danbooru.donmai.us</item> -->
+        <item>danbooru.donmai.us</item>
+        <item>safebooru.org</item>
+        <item>yande.re</item>
     </string-array>
     <string-array name="pref_clear_md5_options">
         <item>15 Minutes</item>
@@ -58,6 +64,11 @@
         <item>6 Hours</item>
         <item>1 Day</item>
         <item>3 Days</item>
+        <item>5 Days</item>
+        <item>10 Days</item>
+        <item>30 Days</item>
+        <item>60 Days</item>
+        <item>90 Days</item>
     </string-array>
     <string-array name="pref_clear_md5_values">
         <item>15</item>
@@ -67,5 +78,11 @@
         <item>360</item>
         <item>1440</item>
         <item>4320</item>
+        <item>7200</item>
+        <item>14400</item>
+        <item>43200</item>
+        <item>86400</item>
+        <item>129600</item>
     </string-array>
+    <string name="pref_log_file">Log file name. No logging if empty. Long tap to open</string>
 </resources>
