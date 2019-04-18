@@ -1,5 +1,6 @@
 package com.taka.muzei.imgboard;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -14,6 +15,8 @@ import android.os.Build;
 import com.google.android.apps.muzei.api.UserCommand;
 import com.google.android.apps.muzei.api.provider.Artwork;
 import com.google.android.apps.muzei.api.provider.MuzeiArtProvider;
+import com.intentfilter.androidpermissions.PermissionManager;
+import com.intentfilter.androidpermissions.models.DeniedPermissions;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +30,8 @@ import androidx.work.Constraints;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
+
+import static java.util.Collections.singleton;
 
 
 public class BooruArtProvider extends MuzeiArtProvider {
@@ -148,18 +153,35 @@ public class BooruArtProvider extends MuzeiArtProvider {
         notificationManager.notify(mID, note);
     }
 
-    public void downloadArtwork(final Artwork dlArt){
-        try {
-            final Uri artImageUri = dlArt.getPersistentUri();
-            if(null == artImageUri) {
-                logger.w("Persistent URI for image is NULL");
-                return;
+    private void doWithPermission(String permission, Runnable callback) {
+        PermissionManager permissionManager = PermissionManager.getInstance(getContext());
+        permissionManager.checkPermissions(singleton(permission), new PermissionManager.PermissionRequestListener() {
+            @Override
+            public void onPermissionGranted() {
+                logger.i("Permissions granted: " + permission);
+                callback.run();
             }
-            logger.i("Downloading image from URL " + artImageUri);
-            final NotificationCompat.Builder builder = constructNotificationBuilder(DOWNLOAD_TITLE,"Download in progress");
-            final NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.notify(mID, builder.build());
-            new Thread(() -> {
+
+            @Override
+            public void onPermissionDenied(DeniedPermissions deniedPermissions) {
+                logger.w("Permissions denied: " + permission);
+            }
+        });
+    }
+
+    public void downloadArtwork(final Artwork dlArt){
+        doWithPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, () -> {
+            try {
+                final Uri artImageUri = dlArt.getPersistentUri();
+                if (null == artImageUri) {
+                    logger.w("Persistent URI for image is NULL");
+                    return;
+                }
+                logger.i("Downloading image from URL " + artImageUri);
+                final NotificationCompat.Builder builder = constructNotificationBuilder(DOWNLOAD_TITLE, "Download in progress");
+                final NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                notificationManager.notify(mID, builder.build());
+                new Thread(() -> {
                     try {
                         final Config config = new Config(getContext());
 
@@ -169,7 +191,7 @@ public class BooruArtProvider extends MuzeiArtProvider {
                         logger.i("Result file name: " + resultFilename);
 
                         File file;
-                        if(artImageUri.toString().startsWith("file://")) {
+                        if (artImageUri.toString().startsWith("file://")) {
                             file = new File(fDir, resultFilename);
                             Utils.copyFile(new File(artImageUri.getPath()), file);
                         } else {
@@ -179,16 +201,17 @@ public class BooruArtProvider extends MuzeiArtProvider {
                         rescanMedia(file);
 
                         notifyDownloadComplete(file, builder, notificationManager);
-                    } catch(Throwable th) {
-                         logger.e("Download failed", th);
-                         notify(DOWNLOAD_TITLE, "Download failed: " + th.getMessage());
+                    } catch (Throwable th) {
+                        logger.e("Download failed", th);
+                        notify(DOWNLOAD_TITLE, "Download failed: " + th.getMessage());
                     }
                 }
-            ).start();
-        } catch (Throwable th) {
-            logger.e("Download failed", th);
-            notify(DOWNLOAD_TITLE, "Download failed: " + th.getMessage());
-        }
+                ).start();
+            } catch (Throwable th) {
+                logger.e("Download failed", th);
+                notify(DOWNLOAD_TITLE, "Download failed: " + th.getMessage());
+            }
+        });
     }
 
     public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
