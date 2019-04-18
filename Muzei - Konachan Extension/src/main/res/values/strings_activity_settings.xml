@@ -66,4 +66,5 @@
         <item>129600</item>
     </string-array>
     <string name="pref_log_file">Log file name. No logging if empty. Long tap to open</string>
+    <string name="pref_show_debug_messages_title">Debug toasts</string>
 </resources>

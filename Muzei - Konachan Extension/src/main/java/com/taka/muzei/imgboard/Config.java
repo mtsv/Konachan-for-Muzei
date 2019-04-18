@@ -110,9 +110,7 @@ public class Config {
         prefs.edit().putString("last_load_status", s).apply();
     }
 
-    public boolean showUserInfo() {
-        return BuildConfig.DEBUG;
-    }
+    public boolean showUserInfo() { return prefs.getBoolean("pref_show_debug_messages", false); }
 
     public boolean useLocalWallpaper() {
         return false;

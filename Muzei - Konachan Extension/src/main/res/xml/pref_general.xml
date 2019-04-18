@@ -89,6 +89,14 @@
             android:persistent="false"
             android:summary="none"/>
 
+        <CheckBoxPreference
+            android:key="pref_show_debug_messages"
+            android:title="@string/pref_show_debug_messages_title"
+            android:defaultValue="false"
+            android:summaryOn="Show toasts with main steps"
+            android:summaryOff="Do not show toasts with main steps"
+            />
+
         <com.taka.muzei.imgboard.EditTextLongClickPreference
             android:key="log_file"
             android:title="@string/pref_log_file"
