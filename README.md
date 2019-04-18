@@ -1,7 +1,7 @@
 Booru-for-Muzei
 ==================
 
-Android app to pull wallpapers from imageboards using Muzei.
+Android app to pull wallpapers from imageboards using [Muzei](http://muzei.co)
 
 ## Supported boards:
 * konachan.com
