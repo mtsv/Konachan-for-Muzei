@@ -23,7 +23,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Prefer
 
     @Override
     public void onPause(){
-        GlobalApplication.setUpLogging();
+        MuzeiBooruApplication.setUpLogging();
         super.onPause();
     }
 

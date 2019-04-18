@@ -2,4 +2,7 @@
     <string name="app_name">Muzei - Booru</string>
     <string name="source_name">Booru</string>
     <string name="source_description">Sourcing artworks from booru-type boards</string>
+    <string name="notification_channel">Download</string>
+    <string name="notification_channel_description">Artwork download process</string>
+    <string name="notification_channel_id">com.taka.muzei.imgboard</string>
 </resources>

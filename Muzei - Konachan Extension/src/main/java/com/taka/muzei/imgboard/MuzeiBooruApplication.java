@@ -4,7 +4,7 @@ import android.app.Application;
 import android.content.Context;
 
 // class to gain access to context from anywhere
-public class GlobalApplication extends Application {
+public class MuzeiBooruApplication extends Application {
     private static Context appContext;
 
     @Override

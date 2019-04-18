@@ -1,5 +1,9 @@
 package com.taka.muzei.imgboard;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -101,5 +105,13 @@ public class Utils {
             logger.e("No write permission for file " + path);
             throw new IOException("Can not write to file " + path);
         }
+    }
+
+    public static void showToast(final String text) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> {
+            Toast toast = Toast.makeText(MuzeiBooruApplication.getAppContext(), text, Toast.LENGTH_LONG);
+            toast.show();
+        });
     }
 }

@@ -32,14 +32,6 @@
 
     <PreferenceCategory android:title="Refresh Settings">
         <ListPreference
-            android:key="pref_refresh_time"
-            android:title="@string/pref_refresh_time_title"
-            android:defaultValue="180"
-            android:entries="@array/pref_refresh_time_options"
-            android:entryValues="@array/pref_refresh_time_values"
-            android:negativeButtonText="@null"
-            android:positiveButtonText="@null" />
-        <ListPreference
             android:key="pref_clear_md5"
             android:title="Image Freshness"
             android:summary="How long images are blocked from being repeated"

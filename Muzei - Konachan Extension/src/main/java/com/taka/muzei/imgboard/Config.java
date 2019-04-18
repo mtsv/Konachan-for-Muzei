@@ -18,17 +18,13 @@ public class Config {
     private String wallpaperDir;
 
     public Config () {
-        this(GlobalApplication.getAppContext());
+        this(MuzeiBooruApplication.getAppContext());
     }
 
     public Config (Context context) {
         imagesDir = context.getString(R.string.app_name);
         wallpaperDir = context.getString(R.string.app_name) + " Wallpapers";
         prefs  = PreferenceManager.getDefaultSharedPreferences(context);
-    }
-
-    public int getTimeSet(){
-        return Integer.parseInt(prefs.getString("pref_refresh_time", "90"));
     }
 
     public long getMD5Clear(){return Long.parseLong(prefs.getString("pref_clear_md5","60"));}
@@ -44,11 +40,6 @@ public class Config {
     public String getSortType() { return prefs.getString("pref_sort_order","score"); }
 
     public Boolean getRestrictContentFlag() { return prefs.getBoolean("pref_restrict_content", true); }
-
-    public int getRotateTimeMillis() {
-        int configTime = getTimeSet();
-        return configTime * 60 * 1000;
-    }
 
     public Uri proxyUrl() {
         final String configProxyString = prefs.getString("proxy", "").trim();
@@ -124,7 +115,7 @@ public class Config {
     }
 
     public boolean useLocalWallpaper() {
-        return true;
+        return false;
     }
 
     public int getHttpRetryCount() {

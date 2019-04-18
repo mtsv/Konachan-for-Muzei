@@ -151,10 +151,11 @@ public class BooruHttpClient {
 
         Uri url = proxify(booruUrl);
 
-        Response response = doRequest(client, url.toString(), numRetry);
-        final String body = response.body().string();
-
-        return parsePosts(body, booru);
+        try(final Response response = doRequest(client, url.toString(), numRetry)) {
+            final ResponseBody body = response.body();
+            final String bodyStr = body.string();
+            return parsePosts(bodyStr, booru);
+        }
     }
 
     private static Response doRequest(OkHttpClient client, String url, int numRetry) throws IOException {
@@ -222,9 +223,8 @@ public class BooruHttpClient {
     }
 
     private static void downloadImpl(OkHttpClient client, Uri uri, File file, fileDownloadProgress callback, int numRetry) throws IOException {
-        final Response response = doRequest(client, uri.toString(), numRetry);
-
-        try (ResponseBody body = response.body()) {
+        try(final Response response = doRequest(client, uri.toString(), numRetry)) {
+            final ResponseBody body = response.body();
             final long conLength = body.contentLength();
             logger.d("Content length: " + conLength);
             BufferedInputStream bis = new BufferedInputStream(body.byteStream());
