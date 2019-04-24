@@ -5,12 +5,21 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
+import androidx.core.content.FileProvider;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 import com.google.android.apps.muzei.api.UserCommand;
 import com.google.android.apps.muzei.api.provider.Artwork;
@@ -23,21 +32,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.NotificationCompat;
-import androidx.core.content.FileProvider;
-import androidx.work.Constraints;
-import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
-
 import static java.util.Collections.singleton;
 
 
 public class BooruArtProvider extends MuzeiArtProvider {
     private final Logger logger = new Logger(BooruArtProvider.class);
     private static final String DOWNLOAD_TITLE = "Muzei - Booru: Downloading Wallpaper";
-    private static final Integer DOWNLOAD_COMMAND = 555;
+    private static final int DOWNLOAD_COMMAND = 555;
+    private static final int DELETE_COMMAND = 556;
 
     static final int mID = 134;
 
@@ -67,13 +69,23 @@ public class BooruArtProvider extends MuzeiArtProvider {
         logger.i("getCommands called");
         List<UserCommand> result = new ArrayList<>();
         result.add(new UserCommand(DOWNLOAD_COMMAND, "Download"));
+        result.add(new UserCommand(DELETE_COMMAND, "Delete"));
         return result;
     }
 
     @Override
     protected void onCommand(@NonNull final Artwork artwork, int id) {
-        if(id == DOWNLOAD_COMMAND) {
-            downloadArtwork(artwork);
+        switch (id) {
+            case DOWNLOAD_COMMAND:
+                downloadArtwork(artwork);
+                break;
+            case DELETE_COMMAND:
+                final Uri artworkUri = ContentUris.withAppendedId(getContentUri(), artwork.getId());
+                logger.i("Deleting artwork with URI " + artworkUri);
+                delete(artworkUri, null, null);
+                break;
+            default:
+                break;
         }
     }
 
