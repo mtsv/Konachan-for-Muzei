@@ -2,6 +2,8 @@ package com.taka.muzei.imgboard;
 
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -23,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
-import androidx.annotation.NonNull;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -231,6 +232,10 @@ public class BooruHttpClient {
 
             byte[] data = new byte[1024];
 
+            // Nougat+ restricts notification update rate: https://saket.me/android-7-nougat-rate-limiting-notifications/
+            long t = System.currentTimeMillis();
+            long notifyStep = 200;
+
             try (FileOutputStream fOut = new FileOutputStream(file)) {
                 float percentComplete;
                 int count;
@@ -239,7 +244,11 @@ public class BooruHttpClient {
                     received += count;
                     percentComplete = Math.round(((received * 100) / conLength));
                     fOut.write(data, 0, count);
-                    callback.notifyProgress(percentComplete);
+                    long nt = System.currentTimeMillis();
+                    if(nt - t > notifyStep) {
+                        t = nt;
+                        callback.notifyProgress(percentComplete);
+                    }
                 }
             }
         }

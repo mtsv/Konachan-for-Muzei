@@ -4,6 +4,7 @@ import android.net.Uri;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.taka.muzei.imgboard.FileUtils;
 import com.taka.muzei.imgboard.Utils;
 
 import java.util.Arrays;
@@ -43,7 +44,7 @@ public class Post {
 
     public Uri getDirectImageUrl() { return  directImageUrl; }
 
-    public String getImageExtension() { return null == directImageUrl ? null : Utils.extractFileExtension(directImageUrl.toString()); }
+    public String getImageExtension() { return null == directImageUrl ? null : FileUtils.extractFileExtension(directImageUrl.toString()); }
 
     public Uri getPostUrl() { return null == postUrl ? getDirectImageUrl() : postUrl; }
 
@@ -56,7 +57,7 @@ public class Post {
         if(null == imageUrl)
             return false;
 
-        final String extension = Utils.extractFileExtension(imageUrl.toString());
+        final String extension = FileUtils.extractFileExtension(imageUrl.toString());
         return allowedExtensions.contains(extension);
     }
 

@@ -84,7 +84,7 @@ public class Config {
         final String logFile = constructLogFilePath(fileName);
 
         try {
-            Utils.checkWriteAccessToFile(logFile);
+            FileUtils.checkWriteAccessToFile(logFile);
         } catch (IOException e) {
             return null;
         }

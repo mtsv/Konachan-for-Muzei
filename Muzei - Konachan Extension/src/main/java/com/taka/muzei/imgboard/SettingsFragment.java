@@ -5,9 +5,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 
-import java.io.File;
-import java.io.IOException;
-
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.preference.ListPreference;
@@ -15,6 +12,9 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 import androidx.preference.PreferenceScreen;
+
+import java.io.File;
+import java.io.IOException;
 
 public class SettingsFragment extends PreferenceFragmentCompat implements Preference.OnPreferenceChangeListener {
     private static final Logger logger = new Logger(SettingsFragment.class);
@@ -140,7 +140,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Prefer
                 try {
                     final String fullPath = config.constructLogFilePath(stringValue);
                     if(null != fullPath) {
-                        Utils.checkWriteAccessToFile(fullPath);
+                        FileUtils.checkWriteAccessToFile(fullPath);
                         stringValue = fullPath;
                     }
                 } catch (IOException e) {

@@ -5,4 +5,9 @@
     <string name="notification_channel">Download</string>
     <string name="notification_channel_description">Artwork download process</string>
     <string name="notification_channel_id">com.taka.muzei.imgboard</string>
+    <string name="notification_download_title">Muzei - Booru: Downloading Wallpaper</string>
+    <string name="command_download_title">Download</string>
+    <string name="command_download_description">Download this image</string>
+    <string name="command_delete_title">Delete</string>
+    <string name="command_delete_description">Delete this image</string>
 </resources>

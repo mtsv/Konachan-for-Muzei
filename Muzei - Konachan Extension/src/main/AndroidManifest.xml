@@ -45,6 +45,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths"/>
         </provider>
+
+        <service
+            android:name="com.taka.muzei.imgboard.CommandService"
+            >
+        </service>
     </application>
 
 </manifest>

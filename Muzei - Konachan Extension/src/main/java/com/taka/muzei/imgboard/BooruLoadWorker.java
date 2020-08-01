@@ -4,6 +4,10 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
 import com.google.android.apps.muzei.api.provider.Artwork;
 import com.google.android.apps.muzei.api.provider.ProviderContract;
 import com.taka.muzei.imgboard.booru.BaseBooru;
@@ -20,10 +24,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import androidx.annotation.NonNull;
-import androidx.work.Worker;
-import androidx.work.WorkerParameters;
 
 public class BooruLoadWorker extends Worker {
     private final Logger logger = new Logger(BooruLoadWorker.class);
@@ -99,7 +99,7 @@ public class BooruLoadWorker extends Worker {
     private boolean tryApplyLocal(Config config, Post post, BooruHttpClient booruHttpClient) {
         final String wallpapersDir = config.getWallpapersDirectory();
         try {
-            Utils.createDirOrCheckAccess(wallpapersDir);
+            FileUtils.createDirOrCheckAccess(wallpapersDir);
         } catch (IOException e) {
             logger.e("Local directory " + wallpapersDir + " access error", e);
             return false;
@@ -108,11 +108,11 @@ public class BooruLoadWorker extends Worker {
         logger.i("Cleaning up old files in dir " + wallpapersDir);
         try {
             final SortedMap<Long, String> prevImages = new TreeMap<>();
-            Utils.listFiles(new File(wallpapersDir), file ->{
+            FileUtils.listFiles(new File(wallpapersDir), file ->{
                 if(!file.isFile())
                     return;
 
-                final String extension = Utils.extractFileExtension(file.getName());
+                final String extension = FileUtils.extractFileExtension(file.getName());
                 if(!Post.allowedExtensions.contains(extension))
                     return;
 
@@ -196,7 +196,7 @@ public class BooruLoadWorker extends Worker {
         }
 
         if(!post.isExtensionValid()) {
-            logger.d( "Post #" + postIdx +": wrong image extension: " + Utils.extractFileExtension(post.getDirectImageUrl().toString()));
+            logger.d( "Post #" + postIdx +": wrong image extension: " + FileUtils.extractFileExtension(post.getDirectImageUrl().toString()));
             return false;
         }
 
